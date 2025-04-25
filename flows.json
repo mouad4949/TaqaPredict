@@ -1,0 +1,111 @@
+[
+    {
+        "id": "db3001c5294e836e",
+        "type": "tab",
+        "label": "TAQA PREDICT - Solution Intégrée",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "84f46a42624b375e",
+        "type": "inject",
+        "z": "db3001c5294e836e",
+        "name": "Démarrer Simulation (5s)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "5",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 240,
+        "wires": [
+            [
+                "4b7eba69cc01fc11"
+            ]
+        ]
+    },
+    {
+        "id": "4b7eba69cc01fc11",
+        "type": "http request",
+        "z": "db3001c5294e836e",
+        "name": "Appel API Flask",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "http://localhost:5000/get_prediction",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "x": 350,
+        "y": 100,
+        "wires": [
+            [
+                "11e8a5f3f6fbd707"
+            ]
+        ]
+    },
+    {
+        "id": "11e8a5f3f6fbd707",
+        "type": "function",
+        "z": "db3001c5294e836e",
+        "name": "Traiter Résultats",
+        "func": "// Dans votre fonction 'Traiter Résultats'\n\n// --- Initial Check for Flask Errors ---\n// Check if payload exists and has a status field first\nif (!msg.payload || typeof msg.payload !== 'object') {\n    node.error(\"Erreur API: Réponse invalide ou non-objet reçue de Flask.\");\n    // Optionally create an error message to send to an error output/log\n    const errorMsg = {\n        payload: {\n            timestamp: new Date().toISOString(),\n            status: 'error',\n            message: 'Invalid or non-object response from model service.',\n            details: msg.payload // Include raw payload for debugging\n        }\n    };\n    // Reset anomaly count on error\n    flow.set('anomalyCount', 0);\n    // Send to output 2 (assuming output 2 is for errors/non-anomalies)\n    return [null, errorMsg];\n}\n\n// Check specifically for the error status from Flask\nif (msg.payload.status !== 'success') {\n    node.error(\"Erreur API Flask: \" + (msg.payload.message || 'Message d\\'erreur vide'));\n    // Create a structured error message\n     const errorMsg = {\n        payload: {\n            timestamp: new Date().toISOString(),\n            status: 'error',\n            message: 'Error reported by model service',\n            details: msg.payload.message || JSON.stringify(msg.payload) // Include Flask's error message\n        }\n    };\n     // Reset anomaly count on error\n    flow.set('anomalyCount', 0);\n     // Send to output 2\n    return [null, errorMsg];\n}\n\n// --- Process Successful Response ---\nconst res = msg.payload; // Response from Flask is successful\n\n// Create a new clean message for the dashboard/further processing\nconst newMsg = {\n    payload: {\n        // Use timestamp from the data if available, otherwise current time\n        timestamp: res.prediction_for_timestamp || res.sequence_end_timestamp || new Date().toISOString(),\n        metrics: {\n            // Display actual values from the *last* step of the input sequence\n            dc_power: res.last_values_in_sequence_raw.DC_POWER,\n            ac_power: res.last_values_in_sequence_raw.AC_POWER,\n            ambient_temp: res.last_values_in_sequence_raw.AMBIENT_TEMPERATURE,\n            module_temp: res.last_values_in_sequence_raw.MODULE_TEMPERATURE,\n            irradiation: res.last_values_in_sequence_raw.IRRADIATION,\n            // Calculate temp_diff using raw values from the last step of the sequence\n            temperature_diff: res.last_values_in_sequence_raw.MODULE_TEMPERATURE - res.last_values_in_sequence_raw.AMBIENT_TEMPERATURE\n        },\n        // --- Anomaly Info ---\n        prediction_error_scaled: res.mae_scaled, // Display the scaled MAE\n        anomaly_threshold_scaled: res.anomaly_threshold_scaled, // Display the threshold used\n        // --- Status determined by Flask based on scaled comparison ---\n        status: res.is_anomaly ? 'warning' : 'normal',\n        // --- Optional: Include predicted/actual next values for comparison ---\n        predicted_values_orig: res.predicted_next_values_orig,\n        actual_next_values_raw: res.actual_next_values_raw\n    }\n};\n\n\n// --- Consecutive Anomaly Logic (Optional - Keep if desired) ---\n// This adds context if multiple anomalies occur in a row\nlet anomalyCount = flow.get('anomalyCount') || 0;\n\nif (res.is_anomaly) {\n    anomalyCount++;\n    flow.set('anomalyCount', anomalyCount);\n\n    // --- Alerting ---\n    // Example: Trigger more critical alert after 3 consecutive anomalies\n    if (anomalyCount >= 3) {\n        newMsg.payload.status = 'critical'; // Elevate status\n        newMsg.alert = {\n            level: 'critical',\n            message: `RISQUE POTENTIEL (${anomalyCount} consécutifs) - MAE Échelle: ${res.mae_scaled ? res.mae_scaled.toFixed(4) : 'N/A'}`,\n            details: `Déviation élevée détectée. Seuil: ${res.anomaly_threshold_scaled.toFixed(4)}. Vérifier l'équipement. Prédiction pour ${newMsg.payload.timestamp}.`\n        };\n    } else {\n        // Standard warning for single or fewer consecutive anomalies\n        newMsg.payload.status = 'warning'; // Ensure status is warning\n         newMsg.alert = {\n            level: 'warning',\n            message: `ANOMALIE DETECTEE (${anomalyCount}) - MAE Échelle: ${res.mae_scaled ? res.mae_scaled.toFixed(4) : 'N/A'}`,\n            details: `Modèle de capteur inhabituel détecté. Seuil: ${res.anomaly_threshold_scaled.toFixed(4)}. Prédiction pour ${newMsg.payload.timestamp}.`\n        };\n    }\n\n     // Send anomaly/warning messages to output 1\n    return [newMsg, null];\n\n} else {\n    // --- Normal Operation ---\n    // Reset consecutive anomaly count\n    flow.set('anomalyCount', 0);\n    newMsg.payload.status = 'normal'; // Ensure status is normal\n\n    // Optionally clear alerts or send a 'normal' status message\n    // newMsg.alert = { level: 'info', message: 'Système Normal' }; // Uncomment if you want info messages for normal state\n\n    // Send normal messages to output 2\n    return [null, newMsg];\n}",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 560,
+        "y": 100,
+        "wires": [
+            [
+                "15928d6f8e431f20"
+            ],
+            [
+                "e13630d94dce60fb"
+            ]
+        ]
+    },
+    {
+        "id": "15928d6f8e431f20",
+        "type": "debug",
+        "z": "db3001c5294e836e",
+        "name": "Sortie Anomalie",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "x": 840,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "e13630d94dce60fb",
+        "type": "debug",
+        "z": "db3001c5294e836e",
+        "name": "Sortie Normale",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 820,
+        "y": 180,
+        "wires": []
+    }
+]
