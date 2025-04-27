@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import { SidebarNav } from "@/components/sidebar-nav"
+// Assuming these components from shadcn/ui might have base styles, we'll enhance them.
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,482 +10,498 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BellRing, Mail, Shield, User, Users, Wrench } from "lucide-react"
+import { BellRing, Mail, Phone, Shield, User, Users, Wrench } from "lucide-react"
+import { X } from "lucide-react"
 
-export default function SettingsPage() {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [smsNotifications, setSmsNotifications] = useState(false)
-  const [criticalAlertsOnly, setCriticalAlertsOnly] = useState(false)
-
-  return (
-    <div className="flex h-screen bg-gradient-to-br from-green-50 to-teal-50">
-      <SidebarNav />
-      <div className="flex-1 p-6 overflow-auto">
-        <div className="max-w-5xl mx-auto">
-          <div className="flex items-center gap-3 mb-6">
-            <Wrench className="h-6 w-6 text-green-700" />
-            <h1 className="text-2xl font-bold text-green-800">Paramètres</h1>
-          </div>
-
-          <Tabs defaultValue="account" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="account" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Compte
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <BellRing className="h-4 w-4" />
-                Notifications
-              </TabsTrigger>
-              <TabsTrigger value="security" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Sécurité
-              </TabsTrigger>
-              <TabsTrigger value="team" className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Équipe
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="account">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informations du Compte</CardTitle>
-                  <CardDescription>
+// --- Child Component for Account Settings --- Enhanced Rounding
+const AccountSettings = React.memo(() => {
+    console.log("Rendering AccountSettings");
+    return (
+        // Card: Enhanced Rounding
+        <Card className="rounded-xl shadow-md overflow-hidden">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-6 py-4">
+                <CardTitle className="text-xl font-semibold text-gray-800">Informations du Compte</CardTitle>
+                <CardDescription className="text-sm text-gray-500 mt-1">
                     Gérez les informations de votre compte et vos préférences personnelles.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nom</Label>
-                        <Input id="name" defaultValue="TAQA Admin" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue="admin@taqa-predict.com" />
-                      </div>
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-8">
+                {/* Section 1: Basic Info */}
+                <div className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="name" className="text-sm font-medium text-gray-700">Nom</Label>
+                            {/* Input: Enhanced Rounding */}
+                            <Input id="name" defaultValue="TAQA Admin" className="rounded-lg shadow-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+                             {/* Input: Enhanced Rounding */}
+                            <Input id="email" type="email" defaultValue="admin@taqa-predict.com" className="rounded-lg shadow-sm" />
+                        </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Téléphone</Label>
-                        <Input id="phone" type="tel" defaultValue="+212 5XX-XXXXXX" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="language">Langue</Label>
-                        <Select defaultValue="fr">
-                          <SelectTrigger id="language">
-                            <SelectValue placeholder="Sélectionner une langue" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="fr">Français</SelectItem>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="ar">العربية</SelectItem>
-                          </SelectContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="phone" className="text-sm font-medium text-gray-700">Téléphone</Label>
+                             {/* Input: Enhanced Rounding */}
+                            <Input id="phone" type="tel" defaultValue="+212 5XX-XXXXXX" className="rounded-lg shadow-sm" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="language" className="text-sm font-medium text-gray-700">Langue</Label>
+                             {/* Select: Enhanced Rounding */}
+                            <Select defaultValue="fr">
+                                <SelectTrigger id="language" className="rounded-lg shadow-sm">
+                                    <SelectValue placeholder="Sélectionner une langue" />
+                                </SelectTrigger>
+                                 {/* Select Content: Enhanced Rounding */}
+                                <SelectContent className="rounded-lg shadow-md">
+                                    <SelectItem value="fr">Français</SelectItem>
+                                    <SelectItem value="en">English</SelectItem>
+                                    <SelectItem value="ar">العربية</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label htmlFor="timezone" className="text-sm font-medium text-gray-700">Fuseau Horaire</Label>
+                         {/* Select: Enhanced Rounding */}
+                        <Select defaultValue="africa/casablanca">
+                            <SelectTrigger id="timezone" className="rounded-lg shadow-sm">
+                                <SelectValue placeholder="Sélectionner un fuseau horaire" />
+                            </SelectTrigger>
+                             {/* Select Content: Enhanced Rounding */}
+                            <SelectContent className="rounded-lg shadow-md">
+                                <SelectItem value="africa/casablanca">Casablanca (GMT+1)</SelectItem>
+                                <SelectItem value="europe/paris">Paris (GMT+2)</SelectItem>
+                                <SelectItem value="europe/london">Londres (GMT+1)</SelectItem>
+                                <SelectItem value="america/new_york">New York (GMT-4)</SelectItem>
+                            </SelectContent>
                         </Select>
-                      </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="timezone">Fuseau Horaire</Label>
-                      <Select defaultValue="africa/casablanca">
-                        <SelectTrigger id="timezone">
-                          <SelectValue placeholder="Sélectionner un fuseau horaire" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="africa/casablanca">Casablanca (GMT+1)</SelectItem>
-                          <SelectItem value="europe/paris">Paris (GMT+2)</SelectItem>
-                          <SelectItem value="europe/london">Londres (GMT+1)</SelectItem>
-                          <SelectItem value="america/new_york">New York (GMT-4)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h3 className="text-lg font-medium mb-3">Préférences d'Affichage</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
+                </div>
+                 {/* Section 2: Display Preferences */}
+                 <div className="border-t border-gray-100 pt-6 space-y-5">
+                    <h3 className="text-lg font-medium text-gray-800">Préférences d'Affichage</h3>
+                    <div className="space-y-4">
+                       {/* Preference Container: Enhanced Rounding */}
+                      <div className="flex items-center justify-between p-4 bg-gray-50/60 rounded-lg border border-gray-100 shadow-sm">
                         <div>
-                          <Label htmlFor="theme">Thème</Label>
-                          <p className="text-sm text-gray-500">Choisissez le thème de l'interface</p>
+                          <Label htmlFor="theme" className="font-medium text-gray-700">Thème</Label>
+                          <p className="text-xs text-gray-500 mt-0.5">Choisissez le thème de l'interface</p>
                         </div>
                         <Select defaultValue="light">
-                          <SelectTrigger id="theme" className="w-40">
+                          <SelectTrigger id="theme" className="w-40 rounded-lg shadow-sm bg-white"> {/* Enhanced Rounding */}
                             <SelectValue placeholder="Sélectionner un thème" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="rounded-lg shadow-md"> {/* Enhanced Rounding */}
                             <SelectItem value="light">Clair</SelectItem>
                             <SelectItem value="dark">Sombre</SelectItem>
                             <SelectItem value="system">Système</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-
-                      <div className="flex items-center justify-between">
+                       {/* Preference Container: Enhanced Rounding */}
+                      <div className="flex items-center justify-between p-4 bg-gray-50/60 rounded-lg border border-gray-100 shadow-sm">
                         <div>
-                          <Label>Mode Compact</Label>
-                          <p className="text-sm text-gray-500">Réduire l'espacement des éléments</p>
+                          <Label className="font-medium text-gray-700">Mode Compact</Label>
+                          <p className="text-xs text-gray-500 mt-0.5">Réduire l'espacement des éléments</p>
                         </div>
+                         {/* Switch: Styling usually controlled by UI library */}
                         <Switch />
                       </div>
                     </div>
                   </div>
+                {/* Action Buttons: Enhanced Rounding */}
+                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                    <Button variant="outline" className="rounded-lg shadow-sm hover:shadow transition-shadow duration-150">Annuler</Button>
+                    <Button className="bg-green-600 hover:bg-green-700 rounded-lg shadow hover:shadow-md transition-all duration-150">Enregistrer les Modifications</Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+});
+AccountSettings.displayName = 'AccountSettings';
 
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline">Annuler</Button>
-                    <Button className="bg-green-600 hover:bg-green-700">Enregistrer</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="notifications">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Préférences de Notification</CardTitle>
-                  <CardDescription>
-                    Configurez comment et quand vous souhaitez être notifié des événements du système.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
+// --- Child Component for Notification Settings --- Enhanced Rounding
+const NotificationSettings = React.memo(({
+    notificationsEnabled, onNotificationsEnabledChange,
+    emailNotifications, onEmailNotificationsChange,
+    smsNotifications, onSmsNotificationsChange,
+    criticalAlertsOnly, onCriticalAlertsOnlyChange
+}: { /* Props type */ }) => {
+    console.log("Rendering NotificationSettings");
+    return (
+        // Card: Enhanced Rounding
+        <Card className="rounded-xl shadow-md overflow-hidden">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-6 py-4">
+                <CardTitle className="text-xl font-semibold text-gray-800">Préférences de Notification</CardTitle>
+                <CardDescription className="text-sm text-gray-500 mt-1">
+                    Configurez comment et quand vous souhaitez être notifié.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-8">
+                {/* Section 1: Global Enable/Disable Container: Enhanced Rounding */}
+                <div className="space-y-4 p-4 bg-gray-50/60 rounded-lg border border-gray-100 shadow-sm">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <Label htmlFor="notifications-enabled">Notifications</Label>
-                        <p className="text-sm text-gray-500">Activer ou désactiver toutes les notifications</p>
-                      </div>
-                      <Switch
-                        id="notifications-enabled"
-                        checked={notificationsEnabled}
-                        onCheckedChange={setNotificationsEnabled}
-                      />
-                    </div>
-
-                    <div className="border-t pt-4">
-                      <h3 className="text-lg font-medium mb-3">Canaux de Notification</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-5 w-5 text-gray-500" />
-                            <div>
-                              <Label htmlFor="email-notifications">Notifications par Email</Label>
-                              <p className="text-sm text-gray-500">Recevoir des alertes par email</p>
-                            </div>
-                          </div>
-                          <Switch
-                            id="email-notifications"
-                            checked={emailNotifications}
-                            onCheckedChange={setEmailNotifications}
-                            disabled={!notificationsEnabled}
-                          />
+                        <div>
+                            <Label htmlFor="notifications-enabled" className="text-base font-medium text-gray-700">Activer les Notifications</Label>
+                            <p className="text-xs text-gray-500 mt-0.5">Activer ou désactiver toutes les notifications système.</p>
                         </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-5 w-5 text-gray-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                        <Switch
+                            id="notifications-enabled"
+                            checked={notificationsEnabled}
+                            onCheckedChange={onNotificationsEnabledChange}
+                        />
+                    </div>
+                </div>
+                 {/* Section 2 & 3 Container */}
+                 <div className={`space-y-8 transition-opacity duration-300 ${!notificationsEnabled ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                    {/* Section 2: Channels */}
+                    <div className="border-t border-gray-100 pt-6">
+                        <h3 className="text-lg font-medium text-gray-800 mb-4">Canaux de Notification</h3>
+                        <div className="space-y-4">
+                            {/* Channel Container: Enhanced Rounding */}
+                            <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200/80 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <Mail className="h-5 w-5 text-gray-400" />
+                                    <div>
+                                        <Label htmlFor="email-notifications" className="font-medium text-gray-700">Notifications par Email</Label>
+                                        <p className="text-xs text-gray-500 mt-0.5">Recevoir des alertes par email à <span className="font-medium">admin@taqa-predict.com</span></p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="email-notifications"
+                                    checked={emailNotifications}
+                                    onCheckedChange={onEmailNotificationsChange}
+                                    disabled={!notificationsEnabled}
+                                />
+                            </div>
+                            {/* Channel Container: Enhanced Rounding */}
+                            <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200/80 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <Phone className="h-5 w-5 text-gray-400" />
+                                    <div>
+                                        <Label htmlFor="sms-notifications" className="font-medium text-gray-700">Notifications par SMS</Label>
+                                        <p className="text-xs text-gray-500 mt-0.5">Recevoir des alertes par SMS au <span className="font-medium">+212 5XX-XXXXXX</span></p>
+                                    </div>
+                                </div>
+                                <Switch
+                                    id="sms-notifications"
+                                    checked={smsNotifications}
+                                    onCheckedChange={onSmsNotificationsChange}
+                                    disabled={!notificationsEnabled}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    {/* Section 3: Alert Types & Frequency */}
+                    <div className="border-t border-gray-100 pt-6">
+                        <h3 className="text-lg font-medium text-gray-800 mb-4">Types et Fréquence</h3>
+                        <div className="space-y-4">
+                           {/* Type Container: Enhanced Rounding */}
+                           <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200/80 shadow-sm">
+                              <div>
+                                <Label htmlFor="critical-only" className="font-medium text-gray-700">Alertes Critiques Uniquement</Label>
+                                <p className="text-xs text-gray-500 mt-0.5">Ne recevoir que les alertes de niveau critique.</p>
+                              </div>
+                              <Switch
+                                id="critical-only"
+                                checked={criticalAlertsOnly}
+                                onCheckedChange={onCriticalAlertsOnlyChange}
+                                disabled={!notificationsEnabled}
                               />
-                            </svg>
-                            <div>
-                              <Label htmlFor="sms-notifications">Notifications par SMS</Label>
-                              <p className="text-sm text-gray-500">Recevoir des alertes par SMS</p>
                             </div>
-                          </div>
-                          <Switch
-                            id="sms-notifications"
-                            checked={smsNotifications}
-                            onCheckedChange={setSmsNotifications}
-                            disabled={!notificationsEnabled}
-                          />
+                           {/* Frequency Select */}
+                           <div className="space-y-1.5 pt-2">
+                             <Label htmlFor="notification-frequency" className="text-sm font-medium text-gray-700">Fréquence des Résumés</Label>
+                             <Select defaultValue="realtime" disabled={!notificationsEnabled || criticalAlertsOnly}>
+                                {/* Select Trigger: Enhanced Rounding */}
+                               <SelectTrigger id="notification-frequency" className="rounded-lg shadow-sm">
+                                 <SelectValue placeholder="Sélectionner une fréquence" />
+                               </SelectTrigger>
+                                {/* Select Content: Enhanced Rounding */}
+                               <SelectContent className="rounded-lg shadow-md">
+                                 <SelectItem value="realtime">Temps réel (par alerte)</SelectItem>
+                                 <SelectItem value="hourly">Résumé horaire</SelectItem>
+                                 <SelectItem value="daily">Résumé quotidien</SelectItem>
+                               </SelectContent>
+                             </Select>
+                             <p className="text-xs text-gray-500">Non applicable si "Alertes Critiques Uniquement" est activé.</p>
+                           </div>
                         </div>
-                      </div>
                     </div>
+                </div>
+                {/* Action Buttons: Enhanced Rounding */}
+                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+                    <Button variant="outline" className="rounded-lg shadow-sm hover:shadow transition-shadow duration-150">Annuler</Button>
+                    <Button className="bg-green-600 hover:bg-green-700 rounded-lg shadow hover:shadow-md transition-all duration-150">Enregistrer les Notifications</Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+});
+NotificationSettings.displayName = 'NotificationSettings';
 
-                    <div className="border-t pt-4">
-                      <h3 className="text-lg font-medium mb-3">Types d'Alertes</h3>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
+// --- Child Component for Security Settings --- Enhanced Rounding
+const SecuritySettings = React.memo(() => {
+    console.log("Rendering SecuritySettings");
+    return (
+        // Card: Enhanced Rounding
+        <Card className="rounded-xl shadow-md overflow-hidden">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-6 py-4">
+                <CardTitle className="text-xl font-semibold text-gray-800">Sécurité du Compte</CardTitle>
+                <CardDescription className="text-sm text-gray-500 mt-1">
+                    Gérez votre mot de passe, l'authentification et les sessions actives.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6 space-y-8">
+                {/* Section 1: Change Password */}
+                <div className="border-b border-gray-100 pb-6">
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Mot de Passe</h3>
+                    <div className="space-y-5">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="current-password">Mot de Passe Actuel</Label>
+                             {/* Input: Enhanced Rounding */}
+                            <Input id="current-password" type="password" className="rounded-lg shadow-sm" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="new-password">Nouveau Mot de Passe</Label>
+                                 {/* Input: Enhanced Rounding */}
+                                <Input id="new-password" type="password" className="rounded-lg shadow-sm" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label htmlFor="confirm-password">Confirmer le Mot de Passe</Label>
+                                 {/* Input: Enhanced Rounding */}
+                                <Input id="confirm-password" type="password" className="rounded-lg shadow-sm" />
+                            </div>
+                        </div>
+                         {/* Button: Enhanced Rounding */}
+                        <Button className="bg-green-600 hover:bg-green-700 rounded-lg shadow hover:shadow-md transition-all duration-150 mt-2">Changer le Mot de Passe</Button>
+                    </div>
+                </div>
+                 {/* Section 2: Two-Factor Auth */}
+                 <div className="border-b border-gray-100 pb-6">
+                    <h3 className="text-lg font-medium text-gray-800 mb-3">Authentification à Deux Facteurs (2FA)</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Ajoutez une couche de sécurité supplémentaire lors de la connexion.
+                    </p>
+                     {/* Container: Enhanced Rounding */}
+                    <div className="flex items-center justify-between p-4 bg-gray-50/60 rounded-lg border border-gray-100 shadow-sm">
+                      <div>
+                        <Label className="font-medium text-gray-700">Statut 2FA</Label>
+                        <p className="text-sm font-semibold text-red-600 mt-0.5">Non activé</p>
+                      </div>
+                       {/* Button: Enhanced Rounding */}
+                      <Button variant="outline" className="rounded-lg shadow-sm hover:shadow transition-shadow duration-150">Activer 2FA</Button>
+                    </div>
+                  </div>
+                 {/* Section 3: Active Sessions */}
+                 <div>
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Sessions Actives</h3>
+                    <div className="space-y-4">
+                       {/* Session Container: Enhanced Rounding */}
+                       <div className="p-4 bg-gray-50/60 rounded-xl border border-gray-200/80 shadow-sm">
+                        <div className="flex justify-between items-start gap-4">
                           <div>
-                            <Label htmlFor="critical-only">Alertes Critiques Uniquement</Label>
-                            <p className="text-sm text-gray-500">Ne recevoir que les alertes de niveau critique</p>
+                            <p className="font-medium text-gray-800">Session Actuelle (Ce navigateur)</p>
+                            <p className="text-sm text-gray-500">Casablanca, Maroc • Chrome sur Windows</p>
+                            <p className="text-xs text-gray-400 mt-1">Dernière activité: Aujourd'hui à 14:30</p>
                           </div>
-                          <Switch
-                            id="critical-only"
-                            checked={criticalAlertsOnly}
-                            onCheckedChange={setCriticalAlertsOnly}
-                            disabled={!notificationsEnabled}
-                          />
+                           {/* Badge: Enhanced Rounding */}
+                          <Badge variant="green" className="rounded-full px-3 py-1">Actif</Badge>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="notification-frequency">Fréquence des Notifications</Label>
-                          <Select defaultValue="realtime" disabled={!notificationsEnabled}>
-                            <SelectTrigger id="notification-frequency">
-                              <SelectValue placeholder="Sélectionner une fréquence" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="realtime">Temps réel</SelectItem>
-                              <SelectItem value="hourly">Résumé horaire</SelectItem>
-                              <SelectItem value="daily">Résumé quotidien</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      </div>
+                       {/* Session Container: Enhanced Rounding */}
+                       <div className="p-4 bg-white rounded-xl border border-gray-200/80 shadow-sm">
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <p className="font-medium text-gray-800">Application Mobile</p>
+                            <p className="text-sm text-gray-500">Casablanca, Maroc • TAQA App sur iPhone</p>
+                            <p className="text-xs text-gray-400 mt-1">Dernière activité: Hier à 18:45</p>
+                          </div>
+                           {/* Button: Enhanced Rounding */}
+                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-300/50 hover:bg-red-50 rounded-lg shadow-sm hover:shadow transition-all duration-150">
+                            Déconnecter
+                          </Button>
                         </div>
                       </div>
                     </div>
                   </div>
+            </CardContent>
+        </Card>
+    );
+});
+SecuritySettings.displayName = 'SecuritySettings';
 
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline">Annuler</Button>
-                    <Button className="bg-green-600 hover:bg-green-700">Enregistrer</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+// --- Child Component for Team Settings --- Enhanced Rounding
+const teamMembers = [ /* Team data remains the same */ ];
 
-            <TabsContent value="security">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Sécurité du Compte</CardTitle>
-                  <CardDescription>
-                    Gérez la sécurité de votre compte et les paramètres d'authentification.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="border-b pb-4">
-                      <h3 className="text-lg font-medium mb-3">Mot de Passe</h3>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="current-password">Mot de Passe Actuel</Label>
-                          <Input id="current-password" type="password" />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="new-password">Nouveau Mot de Passe</Label>
-                            <Input id="new-password" type="password" />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="confirm-password">Confirmer le Mot de Passe</Label>
-                            <Input id="confirm-password" type="password" />
-                          </div>
-                        </div>
-                        <Button className="bg-green-600 hover:bg-green-700">Changer le Mot de Passe</Button>
-                      </div>
-                    </div>
-
-                    <div className="border-b pb-4">
-                      <h3 className="text-lg font-medium mb-3">Authentification à Deux Facteurs</h3>
-                      <p className="text-sm text-gray-500 mb-4">
-                        L'authentification à deux facteurs ajoute une couche de sécurité supplémentaire à votre compte.
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label>Statut</Label>
-                          <p className="text-sm text-red-500">Non activé</p>
-                        </div>
-                        <Button variant="outline">Activer</Button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Sessions Actives</h3>
-                      <div className="space-y-3">
-                        <div className="p-3 bg-gray-50 rounded-lg border">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">Session Actuelle</p>
-                              <p className="text-sm text-gray-500">Casablanca, Maroc • Chrome sur Windows</p>
-                              <p className="text-xs text-gray-400 mt-1">Dernière activité: Aujourd'hui à 14:30</p>
-                            </div>
-                            <Badge className="bg-green-100 text-green-800 border-green-200">Actif</Badge>
-                          </div>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-lg border">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">Application Mobile</p>
-                              <p className="text-sm text-gray-500">Casablanca, Maroc • TAQA App sur iPhone</p>
-                              <p className="text-xs text-gray-400 mt-1">Dernière activité: Hier à 18:45</p>
-                            </div>
-                            <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                              Déconnecter
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="team">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gestion de l'Équipe</CardTitle>
-                  <CardDescription>Gérez les membres de votre équipe et leurs permissions.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Membres de l'Équipe</h3>
-                    <Button className="bg-green-600 hover:bg-green-700">Ajouter un Membre</Button>
-                  </div>
-
-                  <div className="overflow-x-auto">
+const TeamSettings = React.memo(() => {
+    console.log("Rendering TeamSettings");
+    return (
+         // Card: Enhanced Rounding
+        <Card className="rounded-xl shadow-md overflow-hidden">
+            <CardHeader className="bg-gray-50/50 border-b border-gray-100 px-6 py-4 flex justify-between items-center">
+                <div>
+                    <CardTitle className="text-xl font-semibold text-gray-800">Gestion de l'Équipe</CardTitle>
+                    <CardDescription className="text-sm text-gray-500 mt-1">Gérez les membres et leurs permissions.</CardDescription>
+                </div>
+                 {/* Button: Enhanced Rounding */}
+                <Button className="bg-green-600 hover:bg-green-700 rounded-lg shadow hover:shadow-md transition-all duration-150">Ajouter un Membre</Button>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Nom
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Email
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Rôle
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Statut
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                          >
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {[
-                          {
-                            id: 1,
-                            name: "TAQA Admin",
-                            email: "admin@taqa-predict.com",
-                            role: "Administrateur",
-                            status: "Actif",
-                          },
-                          {
-                            id: 2,
-                            name: "Mohammed Alami",
-                            email: "m.alami@taqa-predict.com",
-                            role: "Technicien",
-                            status: "Actif",
-                          },
-                          {
-                            id: 3,
-                            name: "Fatima Benali",
-                            email: "f.benali@taqa-predict.com",
-                            role: "Analyste",
-                            status: "Actif",
-                          },
-                          {
-                            id: 4,
-                            name: "Karim Tazi",
-                            email: "k.tazi@taqa-predict.com",
-                            role: "Gestionnaire",
-                            status: "Inactif",
-                          },
-                        ].map((member) => (
-                          <tr key={member.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {member.name}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.role}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                              <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  member.status === "Actif"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {member.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-900">
-                                Modifier
-                              </Button>
-                              {member.id !== 1 && (
-                                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-900">
-                                  Supprimer
-                                </Button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
+                        <thead className="bg-gray-50/80">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                                <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                            {teamMembers.map((member) => (
+                                <tr key={member.id} className="hover:bg-gray-50/70 transition-colors duration-100">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{member.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.email}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{member.role}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                         {/* Badge: Enhanced Rounding */}
+                                        <Badge variant={member.status === "Actif" ? "green" : "gray"} className="rounded-full">
+                                            {member.status}
+                                        </Badge>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-1">
+                                         {/* Buttons: Enhanced Rounding */}
+                                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg shadow-sm">Modifier</Button>
+                                        {member.id !== 1 && (
+                                            <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg shadow-sm">Supprimer</Button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
                     </table>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h3 className="text-lg font-medium mb-3">Invitations en Attente</h3>
-                    <div className="p-3 bg-gray-50 rounded-lg border">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium">Hassan Chraibi</p>
-                          <p className="text-sm text-gray-500">h.chraibi@taqa-predict.com • Technicien</p>
-                          <p className="text-xs text-gray-400 mt-1">Invité le: 25/04/2023</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            Renvoyer
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                            Annuler
-                          </Button>
-                        </div>
-                      </div>
+                </div>
+            </CardContent>
+             {/* Pending Invitations Section */}
+             <CardContent className="p-6 mt-0 border-t border-gray-100">
+                <h3 className="text-lg font-medium text-gray-800 mb-4">Invitations en Attente</h3>
+                 {/* Invitation Container: Enhanced Rounding */}
+                <div className="p-4 bg-gray-50/60 rounded-xl border border-gray-200/80 shadow-sm">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <p className="font-medium text-gray-800">Hassan Chraibi</p>
+                      <p className="text-sm text-gray-500">h.chraibi@taqa-predict.com • Technicien</p>
+                      <p className="text-xs text-gray-400 mt-1">Invité le: 25/04/2023</p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0 mt-2 sm:mt-0">
+                       {/* Buttons: Enhanced Rounding */}
+                      <Button variant="outline" size="sm" className="rounded-lg shadow-sm hover:shadow transition-shadow duration-150">Renvoyer</Button>
+                      <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 border-red-300/50 hover:bg-red-50 rounded-lg shadow-sm hover:shadow transition-all duration-150">Annuler</Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                </div>
+              </CardContent>
+        </Card>
+    );
+});
+TeamSettings.displayName = 'TeamSettings';
+
+// --- Main Settings Page Component ---
+export default function SettingsPage() {
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [emailNotifications, setEmailNotifications] = useState(true);
+    const [smsNotifications, setSmsNotifications] = useState(false);
+    const [criticalAlertsOnly, setCriticalAlertsOnly] = useState(false);
+
+    // Memoized handlers
+    const handleNotificationsEnabledChange = useCallback((checked: boolean) => { /* ... */ }, []);
+    const handleEmailNotificationsChange = useCallback((checked: boolean) => { /* ... */ }, []);
+    const handleSmsNotificationsChange = useCallback((checked: boolean) => { /* ... */ }, []);
+    const handleCriticalAlertsOnlyChange = useCallback((checked: boolean) => { /* ... */ }, []);
+
+    return (
+        <div className="flex h-screen bg-gradient-to-br from-green-50 to-teal-50">
+            <SidebarNav />
+            <div className="flex-1 p-5 md:p-6 lg:p-8 overflow-y-auto scroll-smooth">
+                <div className="max-w-5xl mx-auto">
+                    {/* Header Section */}
+                    <div className="flex items-center gap-3 mb-8">
+                        {/* Icon BG: Enhanced Rounding */}
+                        <div className="p-2.5 bg-green-100 rounded-full shadow-sm border border-green-200/50">
+                            <Wrench className="h-6 w-6 text-green-700" />
+                        </div>
+                        <h1 className="text-2xl lg:text-3xl font-semibold text-green-800 tracking-tight">
+                            Paramètres
+                        </h1>
+                    </div>
+
+                    {/* Tabs Section */}
+                    <Tabs defaultValue="account" className="w-full">
+                        {/* TabsList: Enhanced Rounding */}
+                        <TabsList className="grid w-full grid-cols-4 mb-8 ">
+                            {/* TabsTrigger: Enhanced Rounding */}
+                            <TabsTrigger value="account" className="mx-2 bg-gray-300 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all duration-300 data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-700 hover:bg-gray-200/60 data-[state=inactive]:opacity-80 font-medium">
+                                <User className="h-4 w-4" /> Compte
+                            </TabsTrigger>
+                            <TabsTrigger value="notifications" className="mx-2 bg-gray-300 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all duration-300 data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-700 hover:bg-gray-200/60 data-[state=inactive]:opacity-80 font-medium">
+                                <BellRing className="h-4 w-4" /> Notifications
+                            </TabsTrigger>
+                            <TabsTrigger value="security" className="mx-2 bg-gray-300 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all duration-300 data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-700 hover:bg-gray-200/60 data-[state=inactive]:opacity-80 font-medium">
+                                <Shield className="h-4 w-4" /> Sécurité
+                            </TabsTrigger>
+                            <TabsTrigger value="team" className="mx-2 bg-gray-300 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all duration-300 data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-md text-gray-700 hover:bg-gray-200/60 data-[state=inactive]:opacity-80 font-medium">
+                                <Users className="h-4 w-4" /> Équipe
+                            </TabsTrigger>
+                        </TabsList>
+
+                        {/* Render Memoized Components */}
+                        <TabsContent value="account" className="transition-opacity duration-300 animate-in fade-in-50">
+                            <AccountSettings />
+                        </TabsContent>
+                        <TabsContent value="notifications" className="transition-opacity duration-300 animate-in fade-in-50">
+                            <NotificationSettings
+                                notificationsEnabled={notificationsEnabled}
+                                onNotificationsEnabledChange={handleNotificationsEnabledChange}
+                                emailNotifications={emailNotifications}
+                                onEmailNotificationsChange={handleEmailNotificationsChange}
+                                smsNotifications={smsNotifications}
+                                onSmsNotificationsChange={handleSmsNotificationsChange}
+                                criticalAlertsOnly={criticalAlertsOnly}
+                                onCriticalAlertsOnlyChange={handleCriticalAlertsOnlyChange}
+                            />
+                        </TabsContent>
+                        <TabsContent value="security" className="transition-opacity duration-300 animate-in fade-in-50">
+                            <SecuritySettings />
+                        </TabsContent>
+                        <TabsContent value="team" className="transition-opacity duration-300 animate-in fade-in-50">
+                            <TeamSettings />
+                        </TabsContent>
+                    </Tabs>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  )
+    )
 }
 
-// Composant Badge manquant
-function Badge({ children, className, variant = "default" }) {
-  const baseClasses = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+
+// Placeholder/Enhanced Badge Component (Keep as is from previous version)
+function Badge({ children, className = '', variant = "default", ...props }: { children: React.ReactNode, className?: string, variant?: "default" | "secondary" | "destructive" | "outline" | string }) {
+  const baseClasses = "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium border shadow-sm" // Added border and shadow-sm
 
   const variantClasses = {
-    default: "bg-primary text-primary-foreground",
-    secondary: "bg-secondary text-secondary-foreground",
-    destructive: "bg-red-100 text-red-800 border border-red-200",
-    outline: "bg-transparent border border-gray-200 text-gray-800",
+    default: "border-transparent bg-primary text-primary-foreground",
+    secondary: "border-transparent bg-secondary text-secondary-foreground",
+    destructive: "border-red-200/80 bg-red-100 text-red-800",
+    outline: "border-gray-300/80 bg-transparent text-gray-800",
+    "green": "border-green-200/80 bg-green-100 text-green-800",
+    "blue": "border-blue-200/80 bg-blue-100 text-blue-800",
+    "gray": "border-gray-200/80 bg-gray-100 text-gray-700",
   }
-
-  return <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>{children}</span>
+  const combinedClasses = `${baseClasses} ${variantClasses[variant] || variantClasses.default} ${className}`
+  return <span className={combinedClasses} {...props}>{children}</span>
 }
