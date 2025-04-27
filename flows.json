@@ -60,7 +60,7 @@
         "type": "function",
         "z": "db3001c5294e836e",
         "name": "Traiter Résultats",
-        "func": "// Dans votre fonction 'Traiter Résultats'\n\n// --- Initial Check for Flask Errors ---\n// Check if payload exists and has a status field first\nif (!msg.payload || typeof msg.payload !== 'object') {\n    node.error(\"Erreur API: Réponse invalide ou non-objet reçue de Flask.\");\n    const errorMsg = {\n        payload: {\n            timestamp: new Date().toISOString(),\n            status: 'error',\n            message: 'Invalid or non-object response from model service.',\n            details: msg.payload\n        }\n    };\n    flow.set('anomalyCount', 0);\n    return [null, errorMsg];\n}\n\n// Check specifically for the error status from Flask\nif (msg.payload.status !== 'success') {\n    node.error(\"Erreur API Flask: \" + (msg.payload.message || 'Message d\\'erreur vide'));\n    const errorMsg = {\n        payload: {\n            timestamp: new Date().toISOString(),\n            status: 'error',\n            message: 'Error reported by model service',\n            details: msg.payload.message || JSON.stringify(msg.payload)\n        }\n    };\n    flow.set('anomalyCount', 0);\n    return [null, errorMsg];\n}\n\n// --- Process Successful Response ---\nconst res = msg.payload; // Response from Flask is successful\n\n// Create a new clean message for the dashboard/further processing\nconst newMsg = {\n    payload: {\n        timestamp: res.prediction_for_timestamp || res.sequence_end_timestamp || new Date().toISOString(),\n        metrics: {\n            dc_power: res.last_values_in_sequence_raw.DC_POWER,\n            ac_power: res.last_values_in_sequence_raw.AC_POWER,\n            ambient_temp: res.last_values_in_sequence_raw.AMBIENT_TEMPERATURE,\n            module_temp: res.last_values_in_sequence_raw.MODULE_TEMPERATURE,\n            irradiation: res.last_values_in_sequence_raw.IRRADIATION,\n            temperature_diff: res.last_values_in_sequence_raw.MODULE_TEMPERATURE - res.last_values_in_sequence_raw.AMBIENT_TEMPERATURE\n        },\n        prediction_error_scaled: res.mae_scaled,\n        anomaly_threshold_scaled: res.anomaly_threshold_scaled,\n        status: res.is_anomaly ? 'warning' : 'normal',\n        predicted_values_orig: res.predicted_next_values_orig,\n        actual_next_values_raw: res.actual_next_values_raw\n    }\n};\n\n// --- Anomaly Severity Calculation ---\nlet severity_above_threshold = 0;\nif (res.is_anomaly && res.mae_scaled !== undefined && res.anomaly_threshold_scaled !== undefined) {\n    severity_above_threshold = res.mae_scaled - res.anomaly_threshold_scaled;\n}\n\n// --- Consecutive Anomaly Logic ---\nlet anomalyCount = flow.get('anomalyCount') || 0;\n\nif (res.is_anomaly) {\n    anomalyCount++;\n    flow.set('anomalyCount', anomalyCount);\n    \n    // --- Determine Risk Level Based on Combined Thresholds ---\n    let riskLevel = 0;\n    let riskMessage = \"Système Normal\";\n    let timeIndication = \"Aucun risque imminent\";\n    let alertLevel = \"info\";\n    \n    // Define thresholds (you can adjust these values based on your data)\n    const LOW_SEVERITY_THRESHOLD = 0.05;  // Small deviation above threshold\n    const MEDIUM_SEVERITY_THRESHOLD = 0.15; // Moderate deviation\n    const HIGH_SEVERITY_THRESHOLD = 0.3;   // Large deviation\n    \n    // Level 1: Mild Anomaly / Monitoring\n    if (severity_above_threshold <= LOW_SEVERITY_THRESHOLD && anomalyCount <= 3) {\n        riskLevel = 1;\n        riskMessage = \"Anomalie Détectée - Surveillance Recommandée\";\n        timeIndication = \"Risque potentiel à long terme (semaines)\";\n        alertLevel = \"warning\";\n        newMsg.payload.status = 'warning';\n    } \n    // Level 2: Moderate Anomaly / Attention\n    else if ((severity_above_threshold > LOW_SEVERITY_THRESHOLD && severity_above_threshold <= MEDIUM_SEVERITY_THRESHOLD) || \n             (anomalyCount > 3 && anomalyCount <= 10)) {\n        riskLevel = 2;\n        riskMessage = \"Comportement Anormal - Attention Requise\";\n        timeIndication = \"Risque potentiel dans les jours à venir (< 72h)\";\n        alertLevel = \"warning\";\n        newMsg.payload.status = 'warning';\n    } \n    // Level 3: Severe Anomaly / Critical\n    else if (severity_above_threshold > MEDIUM_SEVERITY_THRESHOLD || anomalyCount > 10) {\n        riskLevel = 3;\n        riskMessage = \"ALERTE CRITIQUE - Risque de Défaillance\";\n        timeIndication = \"Défaillance probable dans les 24-48h si non résolue\";\n        alertLevel = \"critical\";\n        newMsg.payload.status = 'critical';\n    }\n    \n    // Add severity information to the message\n    newMsg.payload.anomaly_severity = {\n        level: riskLevel,\n        severity_above_threshold: severity_above_threshold,\n        consecutive_count: anomalyCount\n    };\n    \n    // Create alert message\n    newMsg.alert = {\n        level: alertLevel,\n        message: `${riskMessage} (Niveau ${riskLevel})`,\n        details: `Déviation: ${severity_above_threshold.toFixed(4)} au-dessus du seuil (${anomalyCount} anomalies consécutives). ${timeIndication}. Prédiction pour ${newMsg.payload.timestamp}.`,\n        technical_details: {\n            mae_scaled: res.mae_scaled,\n            threshold: res.anomaly_threshold_scaled,\n            severity_above_threshold: severity_above_threshold,\n            consecutive_anomalies: anomalyCount\n        }\n    };\n\n    // Send anomaly messages to output 1\n    return [newMsg, null];\n} else {\n    // --- Normal Operation ---\n    flow.set('anomalyCount', 0);\n    newMsg.payload.status = 'normal';\n    \n    // Add normal level information\n    newMsg.payload.anomaly_severity = {\n        level: 0,\n        severity_above_threshold: 0,\n        consecutive_count: 0\n    };\n    \n    // Optional normal status message\n    newMsg.alert = {\n        level: \"info\",\n        message: \"Système Normal\",\n        details: \"Aucune anomalie détectée. Toutes les métriques sont dans les limites normales.\"\n    };\n\n    // Send normal messages to output 2\n    return [null, newMsg];\n}",
+        "func": "// Dans votre fonction 'Traiter Résultats'\n\n// --- Initial Check for Flask Errors ---\n// Check if payload exists and has a status field first\nif (!msg.payload || typeof msg.payload !== 'object') {\n    node.error(\"Erreur API: Réponse invalide ou non-objet reçue de Flask.\");\n    const errorMsg = {\n        payload: {\n            timestamp: new Date().toISOString(),\n            status: 'error',\n            message: 'Invalid or non-object response from model service.',\n            details: msg.payload\n        }\n    };\n    flow.set('anomalyCount', 0);\n    // Note: Error messages are NOT sent to the WebSocket in this setup\n    // If you want to send errors too, you might need a third output or handle errors differently.\n    return [null, errorMsg]; // Send error to debug output 2 for now\n}\n\n// Check specifically for the error status from Flask\nif (msg.payload.status !== 'success') {\n    node.error(\"Erreur API Flask: \" + (msg.payload.message || 'Message d\\'erreur vide'));\n    const errorMsg = {\n        payload: {\n            timestamp: new Date().toISOString(),\n            status: 'error',\n            message: 'Error reported by model service',\n            details: msg.payload.message || JSON.stringify(msg.payload)\n        }\n    };\n    flow.set('anomalyCount', 0);\n    // Note: Error messages are NOT sent to the WebSocket in this setup\n    return [null, errorMsg]; // Send error to debug output 2 for now\n}\n\n// --- Process Successful Response ---\nconst res = msg.payload; // Response from Flask is successful\n\n// Create a new clean message for the dashboard/further processing\nconst newMsg = {\n    payload: {\n        timestamp: res.prediction_for_timestamp || res.sequence_end_timestamp || new Date().toISOString(),\n        metrics: {\n            dc_power: res.last_values_in_sequence_raw.DC_POWER,\n            ac_power: res.last_values_in_sequence_raw.AC_POWER,\n            ambient_temp: res.last_values_in_sequence_raw.AMBIENT_TEMPERATURE,\n            module_temp: res.last_values_in_sequence_raw.MODULE_TEMPERATURE,\n            irradiation: res.last_values_in_sequence_raw.IRRADIATION,\n            temperature_diff: res.last_values_in_sequence_raw.MODULE_TEMPERATURE - res.last_values_in_sequence_raw.AMBIENT_TEMPERATURE\n        },\n        prediction_error_scaled: res.mae_scaled,\n        anomaly_threshold_scaled: res.anomaly_threshold_scaled,\n        // Simplified is_anomaly flag based on the result\n        is_anomaly_flag: res.is_anomaly,\n        status: res.is_anomaly ? 'warning' : 'normal', // Base status\n        predicted_values_orig: res.predicted_next_values_orig,\n        actual_next_values_raw: res.actual_next_values_raw\n    }\n};\n\n// --- Anomaly Severity Calculation ---\nlet severity_above_threshold = 0;\nif (res.is_anomaly && res.mae_scaled !== undefined && res.anomaly_threshold_scaled !== undefined) {\n    severity_above_threshold = res.mae_scaled - res.anomaly_threshold_scaled;\n}\n\n// --- Consecutive Anomaly Logic ---\nlet anomalyCount = flow.get('anomalyCount') || 0;\n\nif (res.is_anomaly) {\n    anomalyCount++;\n    flow.set('anomalyCount', anomalyCount);\n\n    // --- Determine Risk Level Based on Combined Thresholds ---\n    let riskLevel = 0;\n    let riskMessage = \"Système Normal\";\n    let timeIndication = \"Aucun risque imminent\";\n    let alertLevel = \"info\";\n\n    // Define thresholds (you can adjust these values based on your data)\n    const LOW_SEVERITY_THRESHOLD = 0.05;  // Small deviation above threshold\n    const MEDIUM_SEVERITY_THRESHOLD = 0.15; // Moderate deviation\n    const HIGH_SEVERITY_THRESHOLD = 0.3;   // Large deviation\n\n    // Level 1: Mild Anomaly / Monitoring\n    if (severity_above_threshold <= LOW_SEVERITY_THRESHOLD && anomalyCount <= 3) {\n        riskLevel = 1;\n        riskMessage = \"Anomalie Détectée - Surveillance Recommandée\";\n        timeIndication = \"Risque potentiel à long terme (semaines)\";\n        alertLevel = \"warning\";\n        newMsg.payload.status = 'warning'; // Update status in payload\n    }\n    // Level 2: Moderate Anomaly / Attention\n    else if ((severity_above_threshold > LOW_SEVERITY_THRESHOLD && severity_above_threshold <= MEDIUM_SEVERITY_THRESHOLD) ||\n             (anomalyCount > 3 && anomalyCount <= 10)) {\n        riskLevel = 2;\n        riskMessage = \"Comportement Anormal - Attention Requise\";\n        timeIndication = \"Risque potentiel dans les jours à venir (< 72h)\";\n        alertLevel = \"moderate\"; // Using 'moderate' for clarity\n        newMsg.payload.status = 'moderate'; // Update status in payload\n    }\n    // Level 3: Severe Anomaly / Critical\n    else if (severity_above_threshold > MEDIUM_SEVERITY_THRESHOLD || anomalyCount > 10) {\n        riskLevel = 3;\n        riskMessage = \"ALERTE CRITIQUE - Risque de Défaillance\";\n        timeIndication = \"Défaillance probable dans les 24-48h si non résolue\";\n        alertLevel = \"critical\";\n        newMsg.payload.status = 'critical'; // Update status in payload\n    }\n\n    // Add severity information to the message payload for consistency\n    newMsg.payload.anomaly_severity = {\n        level: riskLevel,\n        severity_above_threshold: severity_above_threshold,\n        consecutive_count: anomalyCount\n    };\n\n    // Create alert object at the top level of the message (msg.alert)\n    newMsg.alert = {\n        level: alertLevel,\n        message: `${riskMessage} (Niveau ${riskLevel})`,\n        time_indication: timeIndication, // Added time indication here\n        details: `Déviation: ${severity_above_threshold.toFixed(4)} au-dessus du seuil (${anomalyCount} anomalies consécutives). Prédiction pour ${newMsg.payload.timestamp}.`,\n        technical_details: {\n            mae_scaled: res.mae_scaled,\n            threshold: res.anomaly_threshold_scaled,\n            severity_above_threshold: severity_above_threshold,\n            consecutive_anomalies: anomalyCount\n        }\n    };\n\n    // Send anomaly messages to output 1\n    return [newMsg, null];\n} else {\n    // --- Normal Operation ---\n    flow.set('anomalyCount', 0);\n    newMsg.payload.status = 'normal';\n\n    // Add normal level information to payload\n    newMsg.payload.anomaly_severity = {\n        level: 0,\n        severity_above_threshold: 0,\n        consecutive_count: 0\n    };\n\n    // Optional: Add a minimal 'alert' object for normal status for consistency, or remove it\n    // Option 1: Minimal alert object\n    /*\n    newMsg.alert = {\n        level: \"info\",\n        message: \"Système Normal\",\n        time_indication: \"\",\n        details: \"Aucune anomalie détectée.\"\n    };\n    */\n    // Option 2: No alert object for normal status (simpler for frontend logic maybe)\n    // delete newMsg.alert; // Remove if it exists from previous logic (shouldn't here)\n\n    // Send normal messages to output 2\n    return [null, newMsg];\n}",
         "outputs": 2,
         "timeout": "",
         "noerr": 0,
@@ -68,13 +68,15 @@
         "finalize": "",
         "libs": [],
         "x": 560,
-        "y": 100,
+        "y": 160,
         "wires": [
             [
-                "15928d6f8e431f20"
+                "15928d6f8e431f20",
+                "f8e9a1b2c3d4e5f6"
             ],
             [
-                "e13630d94dce60fb"
+                "e13630d94dce60fb",
+                "f8e9a1b2c3d4e5f6"
             ]
         ]
     },
@@ -82,7 +84,7 @@
         "id": "15928d6f8e431f20",
         "type": "debug",
         "z": "db3001c5294e836e",
-        "name": "Sortie Anomalie",
+        "name": "Sortie Anomalie (Debug)",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -91,23 +93,42 @@
         "targetType": "full",
         "statusVal": "",
         "statusType": "auto",
-        "x": 840,
-        "y": 40,
+        "x": 870,
+        "y": 100,
         "wires": []
     },
     {
         "id": "e13630d94dce60fb",
         "type": "debug",
         "z": "db3001c5294e836e",
-        "name": "Sortie Normale",
+        "name": "Sortie Normale (Debug)",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "x": 820,
-        "y": 180,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 870,
+        "y": 160,
         "wires": []
+    },
+    {
+        "id": "f8e9a1b2c3d4e5f6",
+        "type": "websocket out",
+        "z": "db3001c5294e836e",
+        "name": "Live Data to Frontend",
+        "server": "c7a681da8b39a459",
+        "client": "",
+        "x": 880,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "c7a681da8b39a459",
+        "type": "websocket-listener",
+        "path": "/ws/live-data",
+        "wholemsg": "true"
     }
 ]
