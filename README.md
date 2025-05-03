@@ -1,4 +1,6 @@
 #TAQA PREDICT: Maintenance Prédictive Pour Toutes Les Énergies
+![image](https://github.com/user-attachments/assets/7805245f-fb46-47b2-990b-d5ff147ec493)
+
 ##Table des Matières
 
     Introduction
